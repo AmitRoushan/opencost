@@ -8,14 +8,69 @@ before:
     # you may remove this if you don't need go generate
     #    - go generate ./...
 builds:
-  - env:
+  - id: amd64
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
     goarch:
       - amd64
+    main: ./cmd/costmodel
+
+    ldflags:
+      - -extldflags "-static" -s -w 
+      - -X github.com/opencost/opencost/pkg/version.Version={{.Version}}
+      - -X github.com/opencost/opencost/pkg/version.GitCommit={{.Commit}}
+  - id: arm64
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
       - arm64
     main: ./cmd/costmodel
+
+    ldflags:
+      - -extldflags "-static" -s -w 
+      - -X github.com/opencost/opencost/pkg/version.Version={{.Version}}
+      - -X github.com/opencost/opencost/pkg/version.GitCommit={{.Commit}}
+
+dockers:
+  - id: amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - amd64
+    image_templates:
+      - "cazelabs/cost-sense_amd64:latest"
+    skip_push: 'true'
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64"
+    extra_files:
+      - ./configs/default.json
+  - id: arm64
+    goos: linux
+    goarch: arm64
+    ids:
+      - arm64
+    image_templates:
+      - "cazelabs/cost-sense_arm64:latest"
+    skip_push: 'true'
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/arm64"
+    extra_files:
+      - ./configs/default.json
+
 
 archives:
   - format: tar.gz
