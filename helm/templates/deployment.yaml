@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "..fullname" . }}
+  labels:
+    {{- include "..labels" . | nindent 4 }}
+  namespace: {{ include "cost-sense.namespace" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "..selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "..selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "..serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cost-sense
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "55M"
+            limits:
+              cpu: "999m"
+              memory: "1G"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "quay.io/kubecost1/kubecost-cost-model:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PROMETHEUS_SERVER_ENDPOINT
+              value: "http://{{ .Values.prometheus.server.fullnameOverride }}.{{ include "cost-sense.namespace" . }}.svc" 
+            - name: CLOUD_PROVIDER_API_KEY
+              value: "AIzaSyD29bGxmHAVEOBYtgd8sYM2gM2ekfxQX4U" # The GCP Pricing API requires a key. This is supplied just for evaluation.
+            - name: CLUSTER_ID
+              value: "cluster-one" # Default cluster ID to use if cluster_id is not set in Prometheus metrics.
+            - name: KUBECOST_NAMESPACE
+              value: "{{ include "cost-sense.namespace" . }}"
+          ports:
+            - name: cost-sense
+              containerPort: {{ .Values.service.costSense.port }}
+              protocol: TCP
+        - image: quay.io/kubecost1/opencost-ui:latest
+          name: cost-sense-ui
+          ports:
+            - name: cost-sense-ui
+              containerPort: {{ .Values.service.costSenseUI.port }}
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "55M"
+            limits:
+              cpu: "999m"
+              memory: "1G"
+          imagePullPolicy: Always
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "..fullname" . }}
+  labels:
+    {{- include "..labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.costSense.port }}
+      targetPort: {{ .Values.service.costSense.targetPort }}
+      protocol: TCP
+      name: cost-sense
+    - port: {{ .Values.service.costSenseUI.port }}
+      targetPort: {{ .Values.service.costSenseUI.targetPort }}
+      protocol: TCP
+      name: cost-sense-ui
+  selector:
+    {{- include "..selectorLabels" . | nindent 4 }}
