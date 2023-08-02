@@ -89,7 +89,7 @@ release:
   # Default is extracted from the origin remote URL or empty if its private hosted.
   github:
     owner: AmitRoushan
-    name: git@github.com:AmitRoushan/opencost.git
+    name: opencost
 
   # IDs of the archives to use.
   # Empty means all IDs.
